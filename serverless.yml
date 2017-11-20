@@ -15,11 +15,15 @@ provider:
 
 custom: ${file(./.variables.yml)}
 
+package:
+  exclude:
+    - examples/**
+
 functions:
   daily_reminder:
     handler: events.daily_reminder
     events:
-      # - schedule: rate(1 day)
+      - schedule: rate(1 day)
       - http:
           path: slash-commands/events
           method: post

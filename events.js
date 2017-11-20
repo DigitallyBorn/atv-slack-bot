@@ -1,57 +1,59 @@
 'use strict';
 
-const Slack = require('slack-node');
-const moment = require('moment');
-
-const example_data = [{
-    date: moment('2017-11-16 17:00:00'),
-    name: 'Something cool happening at night',
-    location: 'Speakeasy',
-    description: 'This thing is going to be great. Check it out!',
-    link: ''
-}, {
-    date: moment('2017-11-17 12:00:00'),
-    name: 'SPEAKCHEESY FOOD TRUCK AT THE VILLAGE',
-    location: 'Just outside',
-    description: 'The Village’s own, Street Stop is bringing the Speakcheesy Food Truck back to the Village. Come by for $7 sandwiches and delicious…',
-    link: 'http://atlantatechvillage.com/events/speakcheesy-food-truck-village-3'
-}];
+const
+    promise = require('bluebird'),
+    Slack = promise.promisifyAll(require('slack-node')),
+    moment = require('moment'),
+    ical = promise.promisifyAll(require('ical'));
 
 module.exports.daily_reminder = (event, context, callback) => {
-    console.log(event);
     var slack = new Slack();
     slack.setWebhook(process.env['SLACK_WEBHOOK_URL']);
 
-    var attachments = []
+    var now = moment();
+    var is_from_slash_command = (event == null || event == undefined || event.requestContext == null || event.requestContext == undefined);
 
-    example_data.forEach(function (element) {
-        attachments.push({
-            title: element.name,
-            title_link: element.link,
-            text: element.description,
-            ts: element.date.unix()
-        });
-    }, this);
+    ical.fromURLAsync('https://www.atlantatechvillage.com/events.ics', {})
+        .then((data) => {
+            var flattened = [];
 
-    var message = {
-        username: "ATV Events",
-        attachments: attachments
-    };
-    
-    if (!event.requestContext) {
-        message.channel = process.env.SLACK_CHANNEL;
+            Object.keys(data).forEach(key => {
+                flattened.push(data[key]);
+            });
+            return flattened;
+        })
+        .filter((event) => {
+            var duration = is_from_slash_command ? 'weeks' : 'days';
 
-        // Don't send this through the API if the lambda is invoked
-        // via API Gateway
-        slack.webhook(message, (err, response) => {
-            if (err) {
-                console.error(err);
+            return moment(event.start).diff(now, duration) <= 1;
+        })
+        .map((event) => {
+            return {
+                title: event.summary,
+                title_link: event.url,
+                text: event.description,
+                ts: moment(event.start).unix()
+            };
+        })
+        .then((attachments) => {
+            return {
+                username: "ATV Events",
+                attachments: attachments
+            };
+        })
+        .tap((message) => {
+            if (is_from_slash_command) {
+                return;
             }
-        });
-    }
 
-    callback(null, {
-        statusCode: 200,
-        body: JSON.stringify(message)
-    });
+            message.channel = process.env.SLACK_CHANNEL;
+            slack.webhook(message, () => {});
+        })
+        .then((message) => {
+            return {
+                statusCode: 200,
+                body: JSON.stringify(message)
+            }
+        })
+        .then(callback);
 };
