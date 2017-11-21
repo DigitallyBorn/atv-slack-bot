@@ -6,7 +6,6 @@ provider:
   versionfunctions: false
   timeout: 10
   memorysize: 512
-
  
 # you can define service wide environment variables here
   environment:
@@ -22,8 +21,14 @@ package:
 functions:
   daily_reminder:
     handler: events.daily_reminder
+    memorySize: 512
+    plugins:
+      - bluebird
+      - ical
+      - moment
+      - slack-node
     events:
-      - schedule: rate(1 day)
+      - schedule: cron(0 13 * * ? *)
       - http:
           path: slash-commands/events
           method: post

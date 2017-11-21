@@ -11,9 +11,9 @@ module.exports.daily_reminder = (event, context, callback) => {
     slack.setWebhook(process.env['SLACK_WEBHOOK_URL']);
 
     var now = moment();
-    var is_from_slash_command = (event == null || event == undefined || event.requestContext == null || event.requestContext == undefined);
+    var is_from_slash_command = !(event == null || event == undefined || event.requestContext == null || event.requestContext == undefined);
 
-    ical.fromURLAsync('https://www.atlantatechvillage.com/events.ics', {})
+    ical.fromURLAsync('https://atlantatechvillage.com/events.ics', {})
         .then((data) => {
             var flattened = [];
 
@@ -23,9 +23,7 @@ module.exports.daily_reminder = (event, context, callback) => {
             return flattened;
         })
         .filter((event) => {
-            var duration = is_from_slash_command ? 'weeks' : 'days';
-
-            return moment(event.start).diff(now, duration) <= 1;
+            return moment(event.start).diff(now, 'weeks') <= 1;
         })
         .map((event) => {
             return {
@@ -46,14 +44,20 @@ module.exports.daily_reminder = (event, context, callback) => {
                 return;
             }
 
+            if (message.attachments.length == 0) {
+                return;
+            }
+
             message.channel = process.env.SLACK_CHANNEL;
             slack.webhook(message, () => {});
         })
         .then((message) => {
-            return {
+            callback(null, {
                 statusCode: 200,
                 body: JSON.stringify(message)
-            }
+            });
         })
-        .then(callback);
+        .catch((err) => { 
+            callback(err, null); 
+        });
 };
