@@ -28,7 +28,7 @@ functions:
       - moment
       - slack-node
     events:
-      - schedule: cron(0 13 * * ? *)
+      - schedule: cron(0 14 * * ? *)
       - http:
           path: slash-commands/events
           method: post
