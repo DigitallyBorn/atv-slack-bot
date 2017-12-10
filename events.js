@@ -40,7 +40,7 @@ module.exports.daily_reminder = (event, context, callback) => {
         .then((attachments) => {
             // Build the message payload
             return {
-                username: "ATV Events",
+                username: "Village Events",
                 attachments: attachments
             };
         })

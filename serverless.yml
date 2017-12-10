@@ -22,6 +22,8 @@ functions:
   daily_reminder:
     handler: events.daily_reminder
     memorySize: 512
+    tags:
+      site: atlantatechvillage.com
     plugins:
       - bluebird
       - ical
