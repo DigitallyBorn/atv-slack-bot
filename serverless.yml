@@ -6,6 +6,7 @@ provider:
   versionfunctions: false
   timeout: 10
   memorysize: 512
+  stage: production
  
 # you can define service wide environment variables here
   environment:
