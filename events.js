@@ -67,11 +67,11 @@ module.exports.daily_reminder = (event, context, callback) => {
 
             return message;
 
-            // if (!is_from_slash_command) {
-            //     slack.webhook(message, () => { });
-            // }
+            if (!is_from_slash_command) {
+                slack.webhook(message, () => { });
+            }
 
-            // return attachment;
+            return attachment;
         })
         .map(webhook_promise)
         .then((message) => {
