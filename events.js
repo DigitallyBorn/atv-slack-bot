@@ -10,6 +10,9 @@ module.exports.daily_reminder = (event, context, callback) => {
     const slack = new Slack();
     slack.setWebhook(process.env['SLACK_WEBHOOK_URL']);
 
+    const start_of_tomorrow = moment().add(1, 'days').startOf('day');
+    const end_of_tomorrow = moment().add(1, 'days').endOf('day');
+
     var webhook_promise = (message) => {
         return new promise((resolve, reject) => {
             slack.webhook(message, (err, response) => {
@@ -45,7 +48,7 @@ module.exports.daily_reminder = (event, context, callback) => {
             if (is_from_slash_command) {
                 return event.timestamp.diff(now, 'weeks') < 0;
             } else {
-                return event.timestamp.diff(now, 'days') === 0;
+                return event.timestamp.isBetween(start_of_tomorrow, end_of_tomorrow);
             }
         })
         .map((event) => {
@@ -66,12 +69,6 @@ module.exports.daily_reminder = (event, context, callback) => {
             };
 
             return message;
-
-            if (!is_from_slash_command) {
-                slack.webhook(message, () => { });
-            }
-
-            return attachment;
         })
         .map(webhook_promise)
         .then((message) => {
