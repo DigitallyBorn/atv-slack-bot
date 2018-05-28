@@ -57,7 +57,13 @@ module.exports.daily_reminder = (event, context, callback) => {
                 title: event.summary,
                 title_link: event.url,
                 text: event.description,
-                ts: event.timestamp.unix()
+                fields: [
+                    {
+                        title: 'When?',
+                        value: event.timestamp.format("dddd, MMMM Do YYYY, h:mm:ss a"),
+                        short: true
+                    }
+                ]
             };
 
             const message = {
